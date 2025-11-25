@@ -18,6 +18,25 @@ class WanLoraWrapper:
         # self.override_dict = {}  # On CPU
 
     def load_lora(self, lora_path, lora_name=None):
+        if os.path.isdir(lora_path):
+            files = [f for f in os.listdir(lora_path) if f.endswith('.safetensors')]
+            if len(files) > 0:
+                # Prefer files that don't start with 'adapter_config' or similar if multiple exist, 
+                # but usually there is one main weight file.
+                # If multiple, take the first one or logic to disambiguate.
+                # For now, take the first one.
+                target_file = files[0]
+                # Try to find one that is NOT config
+                for f in files:
+                    if "config" not in f:
+                        target_file = f
+                        break
+                
+                logger.info(f"Directory provided for LoRA. Found safetensors files: {files}. Using {target_file}")
+                lora_path = os.path.join(lora_path, target_file)
+            else:
+                logger.warning(f"Directory {lora_path} provided but no .safetensors found.")
+
         if lora_name is None:
             lora_name = os.path.basename(lora_path).split(".")[0]
 
