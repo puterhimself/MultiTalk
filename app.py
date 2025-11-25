@@ -776,7 +776,7 @@ def run_graio_demo(args):
             inputs=[img2vid_image, img2vid_prompt, n_prompt, img2vid_audio_1, img2vid_audio_2,sd_steps, seed, text_guide_scale, audio_guide_scale, mode_selector, tts_text, resolution_select, human1_voice, human2_voice],
             outputs=[result_gallery],
         )
-    demo.launch(server_name="0.0.0.0", debug=True, server_port=8418)
+    demo.launch(server_name="0.0.0.0", debug=True, server_port=8418, share=True)
 
         
 
