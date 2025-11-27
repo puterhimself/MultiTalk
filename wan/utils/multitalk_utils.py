@@ -4,11 +4,45 @@ from einops import rearrange
 import torch
 import torch.nn as nn
 
-from xfuser.core.distributed import (
-    get_sequence_parallel_rank,
-    get_sequence_parallel_world_size,
-    get_sp_group,
-)
+# Lazy import xfuser - only needed for multi-GPU sequence parallelism
+_xfuser_available = None
+def _get_xfuser():
+    global _xfuser_available
+    if _xfuser_available is None:
+        try:
+            from xfuser.core.distributed import (
+                get_sequence_parallel_rank,
+                get_sequence_parallel_world_size,
+                get_sp_group,
+            )
+            _xfuser_available = {
+                'get_sequence_parallel_rank': get_sequence_parallel_rank,
+                'get_sequence_parallel_world_size': get_sequence_parallel_world_size,
+                'get_sp_group': get_sp_group,
+            }
+        except ImportError as e:
+            print(f"Warning: xfuser not available ({e}). Multi-GPU sequence parallelism disabled.")
+            _xfuser_available = {}
+    return _xfuser_available
+
+def get_sequence_parallel_rank():
+    xf = _get_xfuser()
+    if 'get_sequence_parallel_rank' in xf:
+        return xf['get_sequence_parallel_rank']()
+    return 0
+
+def get_sequence_parallel_world_size():
+    xf = _get_xfuser()
+    if 'get_sequence_parallel_world_size' in xf:
+        return xf['get_sequence_parallel_world_size']()
+    return 1
+
+def get_sp_group():
+    xf = _get_xfuser()
+    if 'get_sp_group' in xf:
+        return xf['get_sp_group']()
+    raise RuntimeError("xfuser not available - cannot use sequence parallelism")
+
 from einops import rearrange, repeat
 from functools import lru_cache
 import imageio
